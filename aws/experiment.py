@@ -1,7 +1,6 @@
 import subprocess
 
 import wbml.out as out
-from plum import Dispatcher
 
 from .ec2 import (
     run,
@@ -17,8 +16,6 @@ __all__ = ['config',
            'shutdown_finished',
            'kill_all',
            'sync']
-
-_dispatch = Dispatcher()
 
 config = Config()  #: Config for the experiments.
 config['ssh_setup_commands'] = []
@@ -132,7 +129,6 @@ def kill_all():
     ssh_map([['tmux', 'kill-session', '||', 'true']], broadcast=True)
 
 
-@_dispatch(list, str)
 def sync(sources, target):
     """Synchronise data.
 
