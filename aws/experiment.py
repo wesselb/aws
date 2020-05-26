@@ -145,7 +145,7 @@ def sync(sources, target):
                                     '-Pav',
                                     '-e', (f'ssh '
                                            f'-oStrictHostKeyChecking=no '
-                                           f'-i {config["ssh_perm"]}'),
+                                           f'-i {config["ssh_pem"]}'),
                                     f'{config["ssh_user"]}@{ip}:{folder}',
                                     target)
                 except subprocess.CalledProcessError as e:
