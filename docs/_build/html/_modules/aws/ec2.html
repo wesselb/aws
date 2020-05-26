@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>aws.ec2 &mdash; aws 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> aws
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">AWS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Application Programming Interface</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">aws</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>aws.ec2</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for aws.ec2</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">wbml.out</span> <span class="k">as</span> <span class="nn">out</span>
+<span class="kn">from</span> <span class="nn">plum</span> <span class="kn">import</span> <span class="n">Dispatcher</span>
+
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">execute_command</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;get_instances&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_num_instances&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_running_ips&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_state&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;check_all_running&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;run&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;terminate_all&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;start_stopped&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;stop_running&#39;</span><span class="p">]</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">_dispatch</span> <span class="o">=</span> <span class="n">Dispatcher</span><span class="p">()</span>
+
+
+<span class="nd">@_dispatch</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">get_instances</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Get all EC2 instances or select them by ID.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        *instance_ids (str): IDs of EC2 instances to get.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[dict]: List of EC2 instances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">reservations</span> <span class="o">=</span> <span class="n">execute_command</span><span class="p">(</span><span class="s1">&#39;aws&#39;</span><span class="p">,</span> <span class="s1">&#39;ec2&#39;</span><span class="p">,</span> <span class="s1">&#39;describe-instances&#39;</span><span class="p">,</span>
+                                   <span class="n">parse_json</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s1">&#39;Reservations&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Walk through all reservations and filter by valid status.</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">reservation</span> <span class="ow">in</span> <span class="n">reservations</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">reservation</span><span class="p">[</span><span class="s1">&#39;Instances&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;State&#39;</span><span class="p">][</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;running&#39;</span><span class="p">,</span> <span class="s1">&#39;pending&#39;</span><span class="p">,</span> <span class="s1">&#39;stopped&#39;</span><span class="p">}:</span>
+                <span class="n">instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+
+    <span class="c1"># Sort by instance ID.</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">instance</span><span class="p">:</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">instances</span>
+
+
+<div class="viewcode-block" id="get_instances"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.get_instances">[docs]</a><span class="nd">@_dispatch</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">[</span><span class="nb">str</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">get_instances</span><span class="p">(</span><span class="o">*</span><span class="n">instance_ids</span><span class="p">):</span>
+    <span class="c1"># Set `None`s for all instances.</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">instance_ids</span><span class="p">]</span>
+
+    <span class="c1"># Fill the instances that can be found.</span>
+    <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_instances</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">instance_ids</span><span class="p">:</span>
+            <span class="n">instances</span><span class="p">[</span><span class="n">instance_ids</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">])]</span> <span class="o">=</span> <span class="n">instance</span>
+
+    <span class="c1"># Check that all instances have been found.</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">instances</span><span class="p">]):</span>
+        <span class="n">not_found</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance_id</span>
+                     <span class="k">for</span> <span class="n">instance_id</span><span class="p">,</span> <span class="n">instance</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">instance_ids</span><span class="p">,</span> <span class="n">instances</span><span class="p">)</span>
+                     <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Could not find instances corresponding to the &#39;</span>
+                           <span class="s1">&#39;following IDs: &#39;</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">not_found</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_num_instances"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.get_num_instances">[docs]</a><span class="k">def</span> <span class="nf">get_num_instances</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Get the number of available EC2 instances.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Number of available EC2 instances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">get_instances</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="get_running_ips"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.get_running_ips">[docs]</a><span class="k">def</span> <span class="nf">get_running_ips</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Get the IPs corresponding to running EC2 instances.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[str]: List of IPs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;PublicIpAddress&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_state</span><span class="p">(</span><span class="s1">&#39;running&#39;</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="get_state"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.get_state">[docs]</a><span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get all EC2 instances of a certain state.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        state (str): State to filter for.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[dict]: List of EC2 instances in state `state`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">instance</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_instances</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;State&#39;</span><span class="p">][</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">state</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="check_all_running"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.check_all_running">[docs]</a><span class="k">def</span> <span class="nf">check_all_running</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Check whether all EC2 instances are running.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: `True` if all EC2 instances are running, else `False`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_instances</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">instance</span><span class="p">[</span><span class="s1">&#39;State&#39;</span><span class="p">][</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;running&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">instance_type</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">key_name</span><span class="p">,</span> <span class="n">security_group</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run new EC2 instances.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        image_id (str): Image ID.</span>
+<span class="sd">        instance_type (str): Type of the instance.</span>
+<span class="sd">        count (int): Number of such instances to run.</span>
+<span class="sd">        key_name (str): Name of the key pair.</span>
+<span class="sd">        security_group (str): Security group.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">execute_command</span><span class="p">(</span><span class="s1">&#39;aws&#39;</span><span class="p">,</span> <span class="s1">&#39;ec2&#39;</span><span class="p">,</span> <span class="s1">&#39;run-instances&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;--image-id&#39;</span><span class="p">,</span> <span class="n">image_id</span><span class="p">,</span>
+                    <span class="s1">&#39;--count&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">),</span>
+                    <span class="s1">&#39;--instance-type&#39;</span><span class="p">,</span> <span class="n">instance_type</span><span class="p">,</span>
+                    <span class="s1">&#39;--key-name&#39;</span><span class="p">,</span> <span class="n">key_name</span><span class="p">,</span>
+                    <span class="s1">&#39;--security-groups&#39;</span><span class="p">,</span> <span class="n">security_group</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="terminate_all"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.terminate_all">[docs]</a><span class="k">def</span> <span class="nf">terminate_all</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Terminate all EC2 instances&quot;&quot;&quot;</span>
+    <span class="n">instance_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_instances</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instance_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">execute_command</span><span class="p">(</span><span class="s1">&#39;aws&#39;</span><span class="p">,</span> <span class="s1">&#39;ec2&#39;</span><span class="p">,</span> <span class="s1">&#39;terminate-instances&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;--instance-ids&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">instance_ids</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">out</span><span class="p">(</span><span class="s1">&#39;No instances to terminate.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="start_stopped"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.start_stopped">[docs]</a><span class="k">def</span> <span class="nf">start_stopped</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Start all stopped EC2 instances.&quot;&quot;&quot;</span>
+    <span class="n">instance_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_state</span><span class="p">(</span><span class="s1">&#39;stopped&#39;</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instance_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">execute_command</span><span class="p">(</span><span class="s1">&#39;aws&#39;</span><span class="p">,</span> <span class="s1">&#39;ec2&#39;</span><span class="p">,</span> <span class="s1">&#39;start-instances&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;--instance-ids&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">instance_ids</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">out</span><span class="p">(</span><span class="s1">&#39;No stopped instances.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="stop_running"><a class="viewcode-back" href="../../source/aws.ec2.html#aws.ec2.stop_running">[docs]</a><span class="k">def</span> <span class="nf">stop_running</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Stop all running EC2 instances.&quot;&quot;&quot;</span>
+    <span class="n">instance_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">get_state</span><span class="p">(</span><span class="s1">&#39;running&#39;</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instance_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">execute_command</span><span class="p">(</span><span class="s1">&#39;aws&#39;</span><span class="p">,</span> <span class="s1">&#39;ec2&#39;</span><span class="p">,</span> <span class="s1">&#39;stop-instances&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;--instance-ids&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">instance_ids</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">out</span><span class="p">(</span><span class="s1">&#39;No running instances.&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Wessel Bruinsma
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+aws.util module
+===============
+
+.. automodule:: aws.util
+   :members:
+   :undoc-members:
+   :show-inheritance:

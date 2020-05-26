@@ -1,0 +1,7 @@
+aws.ec2 module
+==============
+
+.. automodule:: aws.ec2
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,325 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>aws.ec2 module &mdash; aws 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="aws.experiment module" href="aws.experiment.html" />
+    <link rel="prev" title="Application Programming Interface" href="../api.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> aws
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">AWS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">Application Programming Interface</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">aws.ec2 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aws.experiment.html">aws.experiment module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aws.util.html">aws.util module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">aws</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">Application Programming Interface</a> &raquo;</li>
+        
+      <li>aws.ec2 module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/aws.ec2.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-aws.ec2">
+<span id="aws-ec2-module"></span><h1>aws.ec2 module<a class="headerlink" href="#module-aws.ec2" title="Permalink to this headline">¶</a></h1>
+<dl class="attribute">
+<dt id="aws.ec2.get_instances">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">get_instances</code><a class="reference internal" href="../_modules/aws/ec2.html#get_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.get_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all EC2 instances or select them by ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*instance_ids</strong> (<em>str</em>) – IDs of EC2 instances to get.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of EC2 instances.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.get_num_instances">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">get_num_instances</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#get_num_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.get_num_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of available EC2 instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of available EC2 instances.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.get_running_ips">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">get_running_ips</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#get_running_ips"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.get_running_ips" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the IPs corresponding to running EC2 instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of IPs.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.get_state">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">get_state</code><span class="sig-paren">(</span><em class="sig-param">state</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all EC2 instances of a certain state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>state</strong> (<em>str</em>) – State to filter for.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of EC2 instances in state <cite>state</cite>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.check_all_running">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">check_all_running</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#check_all_running"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.check_all_running" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether all EC2 instances are running.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>True</cite> if all EC2 instances are running, else <cite>False</cite>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.run">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">image_id</em>, <em class="sig-param">instance_type</em>, <em class="sig-param">count</em>, <em class="sig-param">key_name</em>, <em class="sig-param">security_group</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run new EC2 instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image_id</strong> (<em>str</em>) – Image ID.</p></li>
+<li><p><strong>instance_type</strong> (<em>str</em>) – Type of the instance.</p></li>
+<li><p><strong>count</strong> (<em>int</em>) – Number of such instances to run.</p></li>
+<li><p><strong>key_name</strong> (<em>str</em>) – Name of the key pair.</p></li>
+<li><p><strong>security_group</strong> (<em>str</em>) – Security group.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.terminate_all">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">terminate_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#terminate_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.terminate_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminate all EC2 instances</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.start_stopped">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">start_stopped</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#start_stopped"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.start_stopped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start all stopped EC2 instances.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="aws.ec2.stop_running">
+<code class="sig-prename descclassname">aws.ec2.</code><code class="sig-name descname">stop_running</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/aws/ec2.html#stop_running"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aws.ec2.stop_running" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop all running EC2 instances.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="aws.experiment.html" class="btn btn-neutral float-right" title="aws.experiment module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../api.html" class="btn btn-neutral float-left" title="Application Programming Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Wessel Bruinsma
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
