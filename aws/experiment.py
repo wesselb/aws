@@ -139,7 +139,7 @@ def sync(sources, target):
     for ip in get_running_ips():
         with out.Section(ip):
             for folder in sources:
-                out.kv('Folder', folder)
+                out.kv('Syncing folder', folder)
                 try:
                     execute_command('rsync',
                                     '-Pav',
