@@ -52,7 +52,7 @@ def print_logs(path):
     Args:
         path (str): Path to the log.
     """
-    for ip, log in ssh_map([['tail', path]], broadcast=True).items():
+    for ip, log in ssh_map([['tail', '-n100', path]], broadcast=True).items():
         with out.Section(ip):
             out.out(log)
 
@@ -110,18 +110,23 @@ def ssh_map(*commands,
     # Perform mapping.
     results = {}
     for ip, command in zip(ips, commands):
-        results[ip] = ssh(f'ubuntu@{ip}',
+        results[ip] = ssh(f'{config["ssh_user"]}@{ip}',
                           config['ssh_pem'],
                           *setup_commands,
                           *map(wrap, command))
     return results
 
 
+_shutdown_finished_command = [
+    '([[ $(tmux ls 2>&1) =~ "no server running" ]] && sudo shutdown)',
+    '||',
+    'true'
+]
+
+
 def shutdown_finished():
     """Shutdown all instances that have no tmux sessions running anymore."""
-    ssh_map([['([[ $(tmux ls 2>&1) =~ "no server running" ]] && sudo shutdown)',
-              '||',
-              'true']], broadcast=True)
+    ssh_map([_shutdown_finished_command], broadcast=True)
 
 
 def kill_all():
@@ -129,14 +134,20 @@ def kill_all():
     ssh_map([['tmux', 'kill-session', '||', 'true']], broadcast=True)
 
 
-def sync(sources, target):
+def sync(sources, target, ips=None, shutdown=False):
     """Synchronise data.
 
     Args:
         sources (list[str]): List of sources to sync.
         target (str): Directory to sync to.
+        ips (list[str], optional): IPs to sync. Defaults to all running IPs.
+        shutdown (bool, optional): Shutdown machine after syncing if no tmux
+            session is running anymore.
     """
-    for ip in get_running_ips():
+    if ips is None:
+        ips = get_running_ips()
+
+    for ip in ips:
         with out.Section(ip):
             for folder in sources:
                 out.kv('Syncing folder', folder)
@@ -154,3 +165,10 @@ def sync(sources, target):
                     out.kv('Error', str(e))
                     out.out('Trying again.')
                     continue
+
+            if shutdown:
+                # All folders have synced. Check if the instance needs to be
+                # shutdown.
+                ssh(f'{config["ssh_user"]}@{ip}',
+                    config['ssh_pem'],
+                    _shutdown_finished_command)
