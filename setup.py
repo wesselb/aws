@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-requirements = ["numpy>=1.16", "plum-dispatch>1", "wbml"]
+requirements = ["numpy>=1.16", "plum-dispatch>=1", "wbml"]
 
 setup(
     packages=find_packages(exclude=["docs"]),
