@@ -5,24 +5,26 @@ from plum import Dispatcher
 
 from .util import execute_command
 
-__all__ = ['get_instances',
-           'get_num_instances',
-           'get_running_ips',
-           'get_state',
-           'check_all_running',
-           'run',
-           'terminate_all',
-           'start',
-           'stop',
-           'start_stopped',
-           'stop_running']
+__all__ = [
+    "get_instances",
+    "get_num_instances",
+    "get_running_ips",
+    "get_state",
+    "check_all_running",
+    "run",
+    "terminate_all",
+    "start",
+    "stop",
+    "start_stopped",
+    "stop_running",
+]
 
 log = logging.getLogger(__name__)
 
 _dispatch = Dispatcher()
 
 
-@_dispatch()
+@_dispatch
 def get_instances():
     """Get all EC2 instances or select them by ID.
 
@@ -32,39 +34,44 @@ def get_instances():
     Returns:
         list[dict]: List of EC2 instances.
     """
-    reservations = execute_command('aws', 'ec2', 'describe-instances',
-                                   parse_json=True)['Reservations']
+    reservations = execute_command("aws", "ec2", "describe-instances", parse_json=True)[
+        "Reservations"
+    ]
 
     # Walk through all reservations and filter by valid status.
     instances = []
     for reservation in reservations:
-        for instance in reservation['Instances']:
-            if instance['State']['Name'] in {'running', 'pending', 'stopped'}:
+        for instance in reservation["Instances"]:
+            if instance["State"]["Name"] in {"running", "pending", "stopped"}:
                 instances.append(instance)
 
     # Sort by instance ID.
-    instances = sorted(instances, key=lambda x: x['InstanceId'])
+    instances = sorted(instances, key=lambda x: x["InstanceId"])
 
     return instances
 
 
-@_dispatch(str, [str])
-def get_instances(*instance_ids):
+@_dispatch
+def get_instances(*instance_ids: str):
     # Set `None`s for all instances.
     instances = [None for _ in instance_ids]
 
     # Fill the instances that can be found.
     for instance in get_instances():
-        if instance['InstanceId'] in instance_ids:
-            instances[instance_ids.index(instance['InstanceId'])] = instance
+        if instance["InstanceId"] in instance_ids:
+            instances[instance_ids.index(instance["InstanceId"])] = instance
 
     # Check that all instances have been found.
     if any([instance is None for instance in instances]):
-        not_found = [instance_id
-                     for instance_id, instance in zip(instance_ids, instances)
-                     if instance is None]
-        raise RuntimeError('Could not find instances corresponding to the '
-                           'following IDs: ' + ', '.join(not_found) + '.')
+        not_found = [
+            instance_id
+            for instance_id, instance in zip(instance_ids, instances)
+            if instance is None
+        ]
+        raise RuntimeError(
+            "Could not find instances corresponding to the "
+            "following IDs: " + ", ".join(not_found) + "."
+        )
 
     return instances
 
@@ -84,7 +91,7 @@ def get_running_ips():
     Returns:
         list[str]: List of IPs.
     """
-    return [instance['PublicIpAddress'] for instance in get_state('running')]
+    return [instance["PublicIpAddress"] for instance in get_state("running")]
 
 
 def get_state(state):
@@ -96,8 +103,9 @@ def get_state(state):
     Returns:
         list[dict]: List of EC2 instances in state `state`.
     """
-    return [instance for instance in get_instances()
-            if instance['State']['Name'] == state]
+    return [
+        instance for instance in get_instances() if instance["State"]["Name"] == state
+    ]
 
 
 def check_all_running():
@@ -107,7 +115,7 @@ def check_all_running():
         bool: `True` if all EC2 instances are running, else `False`.
     """
     for instance in get_instances():
-        if instance['State']['Name'] != 'running':
+        if instance["State"]["Name"] != "running":
             return False
 
     return True
@@ -123,22 +131,32 @@ def run(image_id, instance_type, count, key_name, security_group):
         key_name (str): Name of the key pair.
         security_group (str): Security group.
     """
-    execute_command('aws', 'ec2', 'run-instances',
-                    '--image-id', image_id,
-                    '--count', str(count),
-                    '--instance-type', instance_type,
-                    '--key-name', key_name,
-                    '--security-groups', security_group)
+    execute_command(
+        "aws",
+        "ec2",
+        "run-instances",
+        "--image-id",
+        image_id,
+        "--count",
+        str(count),
+        "--instance-type",
+        instance_type,
+        "--key-name",
+        key_name,
+        "--security-groups",
+        security_group,
+    )
 
 
 def terminate_all():
     """Terminate all EC2 instances."""
-    instance_ids = [instance['InstanceId'] for instance in get_instances()]
+    instance_ids = [instance["InstanceId"] for instance in get_instances()]
     if len(instance_ids) > 0:
-        execute_command('aws', 'ec2', 'terminate-instances',
-                        '--instance-ids', *instance_ids)
+        execute_command(
+            "aws", "ec2", "terminate-instances", "--instance-ids", *instance_ids
+        )
     else:
-        out.out('No instances to terminate.')
+        out.out("No instances to terminate.")
 
 
 def start(*instances):
@@ -147,9 +165,8 @@ def start(*instances):
     Args:
         *instances (dict): Instances to start.
     """
-    instance_ids = [instance['InstanceId'] for instance in instances]
-    execute_command('aws', 'ec2', 'start-instances',
-                    '--instance-ids', *instance_ids)
+    instance_ids = [instance["InstanceId"] for instance in instances]
+    execute_command("aws", "ec2", "start-instances", "--instance-ids", *instance_ids)
 
 
 def stop(*instances):
@@ -158,24 +175,23 @@ def stop(*instances):
     Args:
         *instances (dict): Instances to stop.
     """
-    instance_ids = [instance['InstanceId'] for instance in instances]
-    execute_command('aws', 'ec2', 'stop-instances',
-                    '--instance-ids', *instance_ids)
+    instance_ids = [instance["InstanceId"] for instance in instances]
+    execute_command("aws", "ec2", "stop-instances", "--instance-ids", *instance_ids)
 
 
 def start_stopped():
     """Start all stopped EC2 instances."""
-    instances = [instance for instance in get_state('stopped')]
+    instances = [instance for instance in get_state("stopped")]
     if len(instances) > 0:
         start(*instances)
     else:
-        out.out('No stopped instances.')
+        out.out("No stopped instances.")
 
 
 def stop_running():
     """Stop all running EC2 instances."""
-    instances = [instance for instance in get_state('running')]
+    instances = [instance for instance in get_state("running")]
     if len(instances) > 0:
         stop(*instances)
     else:
-        out.out('No running instances.')
+        out.out("No running instances.")

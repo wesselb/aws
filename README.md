@@ -1,8 +1,10 @@
 # [AWS](http://github.com/wesselb/aws)
 
-[![Build](https://travis-ci.org/wesselb/aws.svg?branch=master)](https://travis-ci.org/wesselb/aws)
+[![CI](https://github.com/wesselb/aws/workflows/CI/badge.svg?branch=master)](https://github.com/wesselb/aws/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/wesselb/aws/badge.svg?branch=master&service=github)](https://coveralls.io/github/wesselb/aws?branch=master)
 [![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://wesselb.github.io/aws)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 Manage AWS EC2 instances for experiments
 

@@ -1,7 +1,7 @@
 import json
 import subprocess
 
-__all__ = ['Config', 'execute_command', 'ssh']
+__all__ = ["Config", "execute_command", "ssh"]
 
 from wbml import out as out
 
@@ -16,8 +16,10 @@ class Config:
         try:
             return self.data[item]
         except KeyError:
-            raise RuntimeError(f'Attempt to access config key "{item}", '
-                               f'but it is not available. Please set "{item}".')
+            raise RuntimeError(
+                f'Attempt to access config key "{item}", '
+                f'but it is not available. Please set "{item}".'
+            )
 
     def __setitem__(self, key, value):
         self.data[key] = value
@@ -53,28 +55,28 @@ def ssh(host, pem, *commands):
         object: Results of command.
     """
     # Merge all commands into one.
-    command = ['(',
-               *sum([command + [';'] for command in commands[:-1]], []),
-               *commands[-1],
-               ')']
+    command = [
+        "(",
+        *sum([command + [";"] for command in commands[:-1]], []),
+        *commands[-1],
+        ")",
+    ]
 
     # Perform command.
-    with out.Section(f'Executing command on {host}'):
-        out.out(' '.join(command))
+    with out.Section(f"Executing command on {host}"):
+        out.out(" ".join(command))
 
     # Attempt the SSH command until it works.
     res = None
     while res is None:
         try:
-            res = execute_command('ssh',
-                                  '-i', pem,
-                                  '-oStrictHostKeyChecking=no',
-                                  host,
-                                  *command)
+            res = execute_command(
+                "ssh", "-i", pem, "-oStrictHostKeyChecking=no", host, *command
+            )
         except subprocess.CalledProcessError as e:
             # It failed. Print the error and try again.
-            out.kv('Error', str(e))
-            out.out('Trying again.')
+            out.kv("Error", str(e))
+            out.out("Trying again.")
             continue
 
     return res

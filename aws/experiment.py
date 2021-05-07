@@ -2,30 +2,24 @@ import subprocess
 
 import wbml.out as out
 
-from .ec2 import (
-    run,
-    get_num_instances,
-    get_running_ips
-)
+from .ec2 import run, get_num_instances, get_running_ips
 from .util import Config, execute_command, ssh
 
-__all__ = ['config',
-           'spawn',
-           'print_logs',
-           'ssh_map',
-           'shutdown_finished',
-           'kill_all',
-           'sync']
+__all__ = [
+    "config",
+    "spawn",
+    "print_logs",
+    "ssh_map",
+    "shutdown_finished",
+    "kill_all",
+    "sync",
+]
 
 config = Config()  #: Config for the experiments.
-config['ssh_setup_commands'] = []
+config["ssh_setup_commands"] = []
 
 
-def spawn(image_id,
-          total_count,
-          instance_type,
-          key_name,
-          security_group):
+def spawn(image_id, total_count, instance_type, key_name, security_group):
     """Spawn new EC2 instances to make a total.
 
     Args:
@@ -37,13 +31,15 @@ def spawn(image_id,
     """
     available = get_num_instances()
     if available < total_count:
-        run(image_id=image_id,
+        run(
+            image_id=image_id,
             count=total_count - available,
             instance_type=instance_type,
             key_name=key_name,
-            security_group=security_group)
+            security_group=security_group,
+        )
     else:
-        out.out('Already enough instances available.')
+        out.out("Already enough instances available.")
 
 
 def print_logs(path):
@@ -52,15 +48,12 @@ def print_logs(path):
     Args:
         path (str): Path to the log.
     """
-    for ip, log in ssh_map([['tail', '-n100', path]], broadcast=True).items():
+    for ip, log in ssh_map([["tail", "-n100", path]], broadcast=True).items():
         with out.Section(ip):
             out.out(log)
 
 
-def ssh_map(*commands,
-            broadcast=False,
-            in_tmux=False,
-            start_tmux=False):
+def ssh_map(*commands, broadcast=False, in_tmux=False, start_tmux=False):
     """Execute a list of commands on different EC2 instances.
 
     Args:
@@ -76,8 +69,10 @@ def ssh_map(*commands,
 
     # Check that enough instances are available.
     if len(ips) < len(commands):
-        raise RuntimeError(f'Executing {len(commands)} command(s), but '
-                           f'have {len(ips)} instance(s) available.')
+        raise RuntimeError(
+            f"Executing {len(commands)} command(s), but "
+            f"have {len(ips)} instance(s) available."
+        )
 
     # Perform broadcasting.
     if len(commands) == 1 and broadcast:
@@ -86,41 +81,44 @@ def ssh_map(*commands,
     # Define wrapping of commands so that it can be executing inside the tmux
     # session.
     if in_tmux:
+
         def wrap(command_):
             # Escape double quotes in the command because it will be wrapped
             # in double quotes. This will not further escape already escaped
             # quotes...
             command_ = " ".join(command_).replace('"', '\\"')
-            return ['tmux', 'send', '-t', 'experiment',
-                    f'"{command_}"', 'ENTER']
+            return ["tmux", "send", "-t", "experiment", f'"{command_}"', "ENTER"]
+
     else:
+
         def wrap(command_):
             return command_
 
     # Start a tmux session, if necessary.
     if start_tmux:
-        setup_commands = [['tmux', 'new-session -d -s experiment']]
+        setup_commands = [["tmux", "new-session -d -s experiment"]]
     else:
         setup_commands = []
 
     # Also execute configured setup commands.
-    setup_commands += \
-        [wrap(command) for command in config['ssh_setup_commands']]
+    setup_commands += [wrap(command) for command in config["ssh_setup_commands"]]
 
     # Perform mapping.
     results = {}
     for ip, command in zip(ips, commands):
-        results[ip] = ssh(f'{config["ssh_user"]}@{ip}',
-                          config['ssh_pem'],
-                          *setup_commands,
-                          *map(wrap, command))
+        results[ip] = ssh(
+            f'{config["ssh_user"]}@{ip}',
+            config["ssh_pem"],
+            *setup_commands,
+            *map(wrap, command),
+        )
     return results
 
 
 _shutdown_finished_command = [
     '([[ $(tmux ls 2>&1) =~ "no server running" ]] && sudo shutdown)',
-    '||',
-    'true'
+    "||",
+    "true",
 ]
 
 
@@ -131,7 +129,7 @@ def shutdown_finished():
 
 def kill_all():
     """Kill all tmux sessions."""
-    ssh_map([['tmux', 'kill-session', '||', 'true']], broadcast=True)
+    ssh_map([["tmux", "kill-session", "||", "true"]], broadcast=True)
 
 
 def sync(sources, target, ips=None, shutdown=False):
@@ -150,25 +148,32 @@ def sync(sources, target, ips=None, shutdown=False):
     for ip in ips:
         with out.Section(ip):
             for folder in sources:
-                out.kv('Syncing folder', folder)
+                out.kv("Syncing folder", folder)
                 try:
-                    execute_command('rsync',
-                                    '-Pav',
-                                    '-e', (f'ssh '
-                                           f'-oStrictHostKeyChecking=no '
-                                           f'-i {config["ssh_pem"]}'),
-                                    f'{config["ssh_user"]}@{ip}:{folder}',
-                                    target)
+                    execute_command(
+                        "rsync",
+                        "-Pav",
+                        "-e",
+                        (
+                            f"ssh "
+                            f"-oStrictHostKeyChecking=no "
+                            f'-i {config["ssh_pem"]}'
+                        ),
+                        f'{config["ssh_user"]}@{ip}:{folder}',
+                        target,
+                    )
                 except subprocess.CalledProcessError as e:
                     # rsync failed. This can happen because the output is being
                     # writting at that time. Try again.
-                    out.kv('Error', str(e))
-                    out.out('Trying again.')
+                    out.kv("Error", str(e))
+                    out.out("Trying again.")
                     continue
 
             if shutdown:
                 # All folders have synced. Check if the instance needs to be
                 # shutdown.
-                ssh(f'{config["ssh_user"]}@{ip}',
-                    config['ssh_pem'],
-                    _shutdown_finished_command)
+                ssh(
+                    f'{config["ssh_user"]}@{ip}',
+                    config["ssh_pem"],
+                    _shutdown_finished_command,
+                )
