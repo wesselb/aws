@@ -1,9 +1,9 @@
 import json
 import subprocess
 
-__all__ = ["Config", "execute_command", "ssh"]
+import wbml.out as out
 
-from wbml import out as out
+__all__ = ["Config", "execute_command", "ssh"]
 
 
 class Config:

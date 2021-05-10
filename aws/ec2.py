@@ -34,9 +34,8 @@ def get_instances():
     Returns:
         list[dict]: List of EC2 instances.
     """
-    reservations = execute_command("aws", "ec2", "describe-instances", parse_json=True)[
-        "Reservations"
-    ]
+    res = execute_command("aws", "ec2", "describe-instances", parse_json=True)
+    reservations = res["Reservations"]
 
     # Walk through all reservations and filter by valid status.
     instances = []
@@ -135,16 +134,11 @@ def run(image_id, instance_type, count, key_name, security_group):
         "aws",
         "ec2",
         "run-instances",
-        "--image-id",
-        image_id,
-        "--count",
-        str(count),
-        "--instance-type",
-        instance_type,
-        "--key-name",
-        key_name,
-        "--security-groups",
-        security_group,
+        *("--image-id", image_id),
+        *("--count", str(count)),
+        *("--instance-type", instance_type),
+        *("--key-name", key_name),
+        *("--security-groups", security_group),
     )
 
 
