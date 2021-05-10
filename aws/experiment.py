@@ -69,7 +69,7 @@ def print_logs(path):
     Args:
         path (str): Path to the log.
     """
-    for ip, log in ssh_map(f"tail -n100 {path}", broadcast=True).items():
+    for ip, log in ssh_map([f"tail -n100 {path}"], broadcast=True).items():
         with out.Section(ip):
             out.out(log)
 
@@ -87,8 +87,7 @@ def ssh_map(
     """Execute a list of commands on different EC2 instances.
 
     Args:
-        *commands (list[str] or list[list[str]): Commands to execute. One command or
-            list of commands per instance.
+        *commands (list[str]): Commands to execute. One list of commands per instance.
         broadcast (bool, optional): If only one command is given, execute it on all
             instances. Defaults to `False`.
         in_experiment (bool, optional): Execute the command in the `experiment` tmux
@@ -186,12 +185,12 @@ _shutdown_finished_command = "(tmux ls | grep -q experiment) || shutdown -h now"
 
 def shutdown_finished():
     """Shutdown all instances that have no experiment tmux session running anymore."""
-    ssh_map(_shutdown_finished_command, broadcast=True)
+    ssh_map([_shutdown_finished_command], broadcast=True)
 
 
 def kill_all():
     """Kill all tmux sessions."""
-    ssh_map("tmux kill-session || true", broadcast=True)
+    ssh_map(["tmux kill-server || true"], broadcast=True)
 
 
 @_dispatch
