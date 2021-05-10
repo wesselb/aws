@@ -1,9 +1,13 @@
 import json
 import subprocess
+import plum
+from typing import Union
 
 import wbml.out as out
 
-__all__ = ["Config", "execute_command", "ssh"]
+__all__ = ["Config", "execute_command", "join_command", "ssh"]
+
+_dispatch = plum.Dispatcher()
 
 
 class Config:
@@ -43,19 +47,37 @@ def execute_command(*cmd, parse_json=False):
         return res.decode()
 
 
+@_dispatch
+def join_command(command: Union[list, tuple]):
+    """Join a command in list form to make a string.
+
+    Args:
+        command (list[str] or tuple[str]): Command to join.
+
+    Return:
+        str: Everyone as one command.
+    """
+    return "(" + "; ".join(command) + ")"
+
+
+@_dispatch
+def join_command(command: str):
+    return "(" + command + ")"
+
+
 def ssh(host, pem, *commands):
     """Execute commands on a host.
 
     Args:
         host (str): Host to execute command on.
         pem (str): Path to key to use to login.
-        *commands (str): List of commands to execture on host.
+        *commands (str): List of commands to execute on host.
 
     Returns:
         object: Results of command.
     """
     # Merge all commands into one.
-    command = "(" + "; ".join(commands) + ")"
+    command = join_command(commands)
 
     # Perform command.
     with out.Section(f"Executing command on {host}"):

@@ -1,8 +1,10 @@
 import argparse
 import subprocess
 import time
+from typing import List
 
 import numpy as np
+import plum
 import wbml.out as out
 
 from .ec2 import (
@@ -30,6 +32,8 @@ __all__ = [
     "kill_all",
     "sync",
 ]
+
+_dispatch = plum.Dispatcher()
 
 config = Config()  #: Config for the experiments.
 config["setup_commands"] = []
@@ -65,7 +69,7 @@ def print_logs(path):
     Args:
         path (str): Path to the log.
     """
-    for ip, log in ssh_map([f"tail -n100 {path}"], broadcast=True).items():
+    for ip, log in ssh_map(f"tail -n100 {path}", broadcast=True).items():
         with out.Section(ip):
             out.out(log)
 
@@ -83,7 +87,8 @@ def ssh_map(
     """Execute a list of commands on different EC2 instances.
 
     Args:
-        *commands (list[str]): Commands to execute. One list per instance.
+        *commands (list[str] or list[list[str]): Commands to execute. One command or
+            list of commands per instance.
         broadcast (bool, optional): If only one command is given, execute it on all
             instances. Defaults to `False`.
         in_experiment (bool, optional): Execute the command in the `experiment` tmux
@@ -145,11 +150,16 @@ def ssh_map(
             "tmux new-session -d -s monitor",
             wrap(f"sudo su", session="monitor"),
             wrap(f"cd {monitor_aws_repo}", session="monitor"),
+            wrap(
+                f"ssh-keygen -F github.com"
+                f" || ssh-keyscan github.com >>~/.ssh/known_hosts",
+                session="monitor",
+            ),
             wrap(f"git pull", session="monitor"),
             wrap(f"source venv/bin/activate", session="monitor"),
             wrap(f"sleep {monitor_delay}", session="monitor"),
             wrap(
-                f'python -c "import aws.monitor; aws.monitor.{monitor_call}',
+                f'python -c "import aws.monitor; aws.monitor.{monitor_call}"',
                 session="monitor",
             ),
         ]
@@ -176,15 +186,16 @@ _shutdown_finished_command = "(tmux ls | grep -q experiment) || shutdown -h now"
 
 def shutdown_finished():
     """Shutdown all instances that have no experiment tmux session running anymore."""
-    ssh_map([_shutdown_finished_command], broadcast=True)
+    ssh_map(_shutdown_finished_command, broadcast=True)
 
 
 def kill_all():
     """Kill all tmux sessions."""
-    ssh_map(["tmux kill-session || true"], broadcast=True)
+    ssh_map("tmux kill-session || true", broadcast=True)
 
 
-def sync(sources, target, ips=None, shutdown=False):
+@_dispatch
+def sync(sources: List[str], target: str, ips=None, shutdown=False):
     """Synchronise data.
 
     Args:
@@ -263,6 +274,10 @@ def manage_cluster(
     if args.sync_stopped:
         with out.Section("Syncing all stopped instances in five batches"):
             for batch in np.array_split(get_state("stopped"), 5):
+                # Batches can be empty.
+                if len(batch) == 0:
+                    continue
+
                 # Start the instances.
                 start(*batch)
 
@@ -276,12 +291,12 @@ def manage_cluster(
                     batch = get_instances(*instance_ids)
 
                     # Setup the instances.
-                    ssh_map([config["setup_commands"]], broadcast=True)
+                    ssh_map(config["setup_commands"], broadcast=True)
 
                     # Sync.
                     sync(
-                        sources=sync_sources,
-                        target=sync_target,
+                        sync_sources,
+                        sync_target,
                         ips=[instance["PublicIpAddress"] for instance in batch],
                     )
                 finally:
@@ -346,10 +361,6 @@ def manage_cluster(
 
     while True:
         out.kv("Instances still running", len(get_running_ips()))
-        sync(
-            sources=sync_sources,
-            target=sync_target,
-            shutdown=True,
-        )
+        sync(sync_sources, sync_target, shutdown=True)
         out.out("Sleeping for two minutes...")
         time.sleep(2 * 60)
