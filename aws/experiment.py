@@ -135,7 +135,7 @@ def ssh_map(
         setup_commands = [
             "tmux new-session -d -s experiment",
             "tmux split-window -t experiment -h",
-            wrap("watch -n0.1 nivida-smi", session="experiment"),
+            wrap("watch -n0.1 nvidia-smi", session="experiment"),
             "tmux split-window -t experiment -v",
             'tmux send-keys -t experiment "htop" ENTER "\\\\python" ENTER',
             "tmux select-pane -t experiment -L",
