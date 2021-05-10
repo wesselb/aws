@@ -22,7 +22,7 @@ Finally, make a virtual environment and install the requirements.
 ```bash
 virtualenv -p python3 venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -e .
 ```
 
 ## Sample Experiment
