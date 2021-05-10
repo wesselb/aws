@@ -49,29 +49,24 @@ def ssh(host, pem, *commands):
     Args:
         host (str): Host to execute command on.
         pem (str): Path to key to use to login.
-        *commands (list[str]): Command, which is a list of parts.
+        *commands (str): List of commands to execture on host.
 
     Returns:
         object: Results of command.
     """
     # Merge all commands into one.
-    command = [
-        "(",
-        *sum([command + [";"] for command in commands[:-1]], []),
-        *commands[-1],
-        ")",
-    ]
+    command = "(" + "; ".join(commands) + ")"
 
     # Perform command.
     with out.Section(f"Executing command on {host}"):
-        out.out(" ".join(command))
+        out.out(command)
 
     # Attempt the SSH command until it works.
     res = None
     while res is None:
         try:
             res = execute_command(
-                "ssh", "-i", pem, "-oStrictHostKeyChecking=no", host, *command
+                "ssh", "-i", pem, "-oStrictHostKeyChecking=no", host, command
             )
         except subprocess.CalledProcessError as e:
             # It failed. Print the error and try again.

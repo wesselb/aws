@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 ### Setup the Instance
 
-* Configure access to GitHub:
+* Create a key for GitHub.
 
 ```bash
 ssh-keygen -f ~/.ssh/github -t ed25519 -C "email@host.com" \
@@ -52,7 +52,8 @@ ssh-keygen -f ~/.ssh/github -t ed25519 -C "email@host.com" \
     && echo "Public key:" \
     && cat ~/.ssh/github.pub
 ```
-   Add the public key to your GitHub account.
+
+* Add the public key to your GitHub account.
    
 * Configure the instance:
 
@@ -106,17 +107,17 @@ import aws.monitor as monitor
 experiment.config["ssh_user"] = "ec2-user"
 experiment.config["ssh_pem"] = f"~/.ssh/{KEY}.pem"
 experiment.config["setup_commands"] = [
-    "sudo su"
-    "cd /home/ec2-user"
+    "cd /home/ec2-user",
     "mkdir -p efs",
-    "mount ...",  # Insert the right mounting command for the EFS.
+    "sudo mount ...",  # Insert the right mounting command for the EFS.
+    "sudo chmod 777 efs",
     "cd /home/ec2-user/pac-bayes-nps",
 ]
 
 commands = [
-    "touch ../efs/one.txt",
-    "touch ../efs/two.txt",
-    "touch ../efs/three.txt",
+    "mkdir -p ../efs/output && touch ../efs/output/one.txt",
+    "mkdir -p ../efs/output && touch ../efs/output/two.txt",
+    "mkdir -p ../efs/output && touch ../efs/output/three.txt",
 ]
 
 experiment.manage_cluster(
@@ -125,7 +126,7 @@ experiment.manage_cluster(
     key_name=KEY,
     security_group_id=SECURITY_GROUP,
     image_id=IMAGE_ID,
-    sync_sources="/home/ec2-user/efs",
+    sync_sources="/home/ec2-user/efs/output",
     sync_target="sync",
     monitor_call=monitor.shutdown_after_a_while_call(duration=600),
     monitor_aws_repo="/home/ec2-user/aws",
@@ -148,6 +149,12 @@ optional arguments:
   --start         Start all experiments.
   ```
 
+* Make an empty directory to synchronise to:
+
+```bash
+mkdir sync
+```
+
 * Test that no instances are running:
 
 ```bash
@@ -156,10 +163,25 @@ Instances still running: 0
 Sleeping for two minutes...
 ```
 
-* Kill the script. Now spawn two instances and star the experiment:
+* Kill the script. Now spawn two instances and start the experiment:
 
 ```bash
 $ python cluster.py --spawn 2 --start
+```
+
+* Check that `sync` contains the three files.
+
+*
+    Login into one of the instances to check that `/home/ec2-user/efs` also contains the
+    three files.
+    
+* Now wait ten minutes. Eventually no instance should still be running:
+
+
+* Terminate all instances. You're good to go!
+
+```bash
+$ python cluster.py --terminate
 ```
 
 

@@ -211,7 +211,6 @@ def sync(sources, target, ips=None, shutdown=False):
                             f"-oStrictHostKeyChecking=no "
                             f'-i {config["ssh_pem"]}'
                         ),
-                        '--rsync-path="sudo rsync"',
                         f'{config["ssh_user"]}@{ip}:{folder}',
                         target,
                     )
@@ -228,7 +227,7 @@ def sync(sources, target, ips=None, shutdown=False):
                 ssh(
                     f'{config["ssh_user"]}@{ip}',
                     config["ssh_pem"],
-                    [_shutdown_finished_command],
+                    _shutdown_finished_command,
                 )
 
 
