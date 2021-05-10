@@ -73,7 +73,7 @@ def ssh_map(
     in_experiment=False,
     start_experiment=False,
     start_monitor=False,
-    monitor_aws_repo_venv="source /aws/venv/bin/activate",
+    monitor_aws_repo="/home/ec2-user/aws",
     monitor_delay=600,
     monitor_call="shutdown_when_all_gpus_idle_for_a_while(duration=120)",
 ):
@@ -89,9 +89,7 @@ def ssh_map(
             Defaults to `False`.
         start_monitor (bool, optional): Start the `monitor` tmux session. Defaults to
             `False`.
-        monitor_aws_repo_venv (str, optional): Command that activates a virtual
-            environment which has this package installed. This must be correct if
-            `start_monitor` is set to `True`.
+        monitor_aws_repo (str, optional): Path to the root of this repo.
         monitor_delay (int, optional): Delay before starting the monitor.
         monitor_call (str, optional): Python call to start the monitor.
     """
@@ -142,8 +140,10 @@ def ssh_map(
         # Setup monitor.
         setup_commands += [
             "tmux new-session -d -s monitor",
-            wrap(monitor_aws_repo_venv, session="monitor"),
-            wrap(f"sleep {minitor_delay}", session="monitor"),
+            wrap(f"cd {monitor_aws_repo}", session="monitor"),
+            wrap(f"git pull", session="monitor"),
+            wrap(f"source venv/bin/activate", session="monitor"),
+            wrap(f"sleep {monitor_delay}", session="monitor"),
             wrap(
                 f'sudo python -c "import aws.monitor; aws.monitor.{monitor_call}',
                 session="monitor",
@@ -315,7 +315,7 @@ def manage_cluster(
                 start_experiment=True,
                 in_experiment=True,
                 start_monitor=True,
-                monitor_aws_repo_venv=monitor_aws_repo_venv,
+                monitor_aws_repo=monitor_aws_repo_venv,
                 monitor_delay=monitor_delay,
                 monitor_call=monitor_call,
             )
