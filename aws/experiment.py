@@ -12,10 +12,13 @@ from .ec2 import (
     get_state,
     check_all_running,
     run,
+    terminate_all,
     start,
     stop,
     start_stopped,
+    stop_running,
 )
+from .monitor import shutdown_when_all_gpus_idle_for_a_while_call
 from .util import Config, execute_command, ssh
 
 __all__ = [
@@ -30,10 +33,10 @@ __all__ = [
 
 config = Config()  #: Config for the experiments.
 config["setup_commands"] = []
-config["teardown_commands"] = ["logout"]
+config["teardown_commands"] = []
 
 
-def spawn(image_id, total_count, instance_type, key_name, security_group):
+def spawn(image_id, total_count, instance_type, key_name, security_group_id):
     """Spawn new EC2 instances to make a total.
 
     Args:
@@ -41,7 +44,7 @@ def spawn(image_id, total_count, instance_type, key_name, security_group):
         total_count (int): Desired number of instances.
         instance_type (str): Type of the instance.
         key_name (str): Name of the key pair.
-        security_group (str): Security group.
+        security_group_id (str): Security group.
     """
     available = get_num_instances()
     if available < total_count:
@@ -50,7 +53,7 @@ def spawn(image_id, total_count, instance_type, key_name, security_group):
             count=total_count - available,
             instance_type=instance_type,
             key_name=key_name,
-            security_group=security_group,
+            security_group_id=security_group_id,
         )
     else:
         out.out("Already enough instances available.")
@@ -75,7 +78,7 @@ def ssh_map(
     start_monitor=False,
     monitor_aws_repo="/home/ec2-user/aws",
     monitor_delay=600,
-    monitor_call="shutdown_when_all_gpus_idle_for_a_while(duration=120)",
+    monitor_call=shutdown_when_all_gpus_idle_for_a_while_call(duration=120),
 ):
     """Execute a list of commands on different EC2 instances.
 
@@ -119,7 +122,7 @@ def ssh_map(
 
     else:
 
-        def wrap(command_):
+        def wrap(command_, session):
             return command_
 
     if start_experiment:
@@ -140,18 +143,21 @@ def ssh_map(
         # Setup monitor.
         setup_commands += [
             "tmux new-session -d -s monitor",
+            wrap(f"sudo su", session="monitor"),
             wrap(f"cd {monitor_aws_repo}", session="monitor"),
             wrap(f"git pull", session="monitor"),
             wrap(f"source venv/bin/activate", session="monitor"),
             wrap(f"sleep {monitor_delay}", session="monitor"),
             wrap(
-                f'sudo python -c "import aws.monitor; aws.monitor.{monitor_call}',
+                f'python -c "import aws.monitor; aws.monitor.{monitor_call}',
                 session="monitor",
             ),
         ]
 
     # Also execute configured setup commands.
-    setup_commands += [wrap(command) for command in config["ssh_setup_commands"]]
+    setup_commands += [
+        wrap(command, session="experiment") for command in config["setup_commands"]
+    ]
 
     # Perform mapping.
     results = {}
@@ -160,7 +166,7 @@ def ssh_map(
             f'{config["ssh_user"]}@{ip}',
             config["ssh_pem"],
             *setup_commands,
-            *map(wrap, command),
+            *[wrap(x, session="experiment") for x in command],
         )
     return results
 
@@ -205,6 +211,7 @@ def sync(sources, target, ips=None, shutdown=False):
                             f"-oStrictHostKeyChecking=no "
                             f'-i {config["ssh_pem"]}'
                         ),
+                        '--rsync-path="sudo rsync"',
                         f'{config["ssh_user"]}@{ip}:{folder}',
                         target,
                     )
@@ -229,19 +236,29 @@ def manage_cluster(
     commands,
     instance_type,
     key_name,
-    security_group,
+    security_group_id,
     image_id,
     sync_sources=None,
     sync_target=None,
-    monitor_call="shutdown_when_all_gpus_idle_for_a_while(duration=120)",
+    monitor_call=shutdown_when_all_gpus_idle_for_a_while_call(duration=120),
     monitor_delay=600,
-    monitor_aws_repo_venv="source /aws/venv/bin/activate",
+    monitor_aws_repo="/home/ec2-user/aws",
 ):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sync-stopped", action="store_true")
-    parser.add_argument("--spawn", type=int)
-    parser.add_argument("--kill", action="store_true")
-    parser.add_argument("--start", action="store_true")
+    parser.add_argument(
+        "--sync-stopped", action="store_true", help="Synchronise all stopped instances."
+    )
+    parser.add_argument("--spawn", type=int, help="Spawn instances.")
+    parser.add_argument(
+        "--kill", action="store_true", help="Kill all running experiments."
+    )
+    parser.add_argument(
+        "--stop", action="store_true", help="Stop all running instances"
+    )
+    parser.add_argument(
+        "--terminate", action="store_true", help="Terminate all instances."
+    )
+    parser.add_argument("--start", action="store_true", help="Start experiments.")
     args = parser.parse_args()
 
     if args.sync_stopped:
@@ -285,7 +302,7 @@ def manage_cluster(
                 total_count=args.spawn,
                 instance_type=instance_type,
                 key_name=key_name,
-                security_group=security_group,
+                security_group_id=security_group_id,
             )
 
         while not check_all_running():
@@ -298,6 +315,14 @@ def manage_cluster(
     if args.kill:
         with out.Section("Killing all experiments"):
             kill_all()
+
+    if args.stop:
+        with out.Section("Stopping all instances"):
+            stop_running()
+
+    if args.terminate:
+        with out.Section("Terminating all instances"):
+            terminate_all()
 
     if args.start:
         num_instances = len(get_running_ips())
@@ -315,7 +340,7 @@ def manage_cluster(
                 start_experiment=True,
                 in_experiment=True,
                 start_monitor=True,
-                monitor_aws_repo=monitor_aws_repo_venv,
+                monitor_aws_repo=monitor_aws_repo,
                 monitor_delay=monitor_delay,
                 monitor_call=monitor_call,
             )

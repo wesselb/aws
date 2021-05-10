@@ -120,7 +120,7 @@ def check_all_running():
     return True
 
 
-def run(image_id, instance_type, count, key_name, security_group):
+def run(image_id, instance_type, count, key_name, security_group_id):
     """Run new EC2 instances.
 
     Args:
@@ -128,7 +128,7 @@ def run(image_id, instance_type, count, key_name, security_group):
         instance_type (str): Type of the instance.
         count (int): Number of such instances to run.
         key_name (str): Name of the key pair.
-        security_group (str): Security group.
+        security_group_id (str): Security group ID.
     """
     execute_command(
         "aws",
@@ -138,7 +138,7 @@ def run(image_id, instance_type, count, key_name, security_group):
         *("--count", str(count)),
         *("--instance-type", instance_type),
         *("--key-name", key_name),
-        *("--security-groups", security_group),
+        *("--security-group-ids", security_group_id),
     )
 
 
