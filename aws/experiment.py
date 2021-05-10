@@ -148,7 +148,6 @@ def ssh_map(
         # Setup monitor.
         setup_commands += [
             "tmux new-session -d -s monitor",
-            wrap(f"sudo su", session="monitor"),
             wrap(f"cd {monitor_aws_repo}", session="monitor"),
             wrap(
                 f"ssh-keygen -F github.com"
@@ -156,6 +155,7 @@ def ssh_map(
                 session="monitor",
             ),
             wrap(f"git pull", session="monitor"),
+            wrap(f"sudo su", session="monitor"),
             wrap(f"source venv/bin/activate", session="monitor"),
             wrap(f"sleep {monitor_delay}", session="monitor"),
             wrap(
