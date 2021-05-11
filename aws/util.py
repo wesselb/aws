@@ -1,13 +1,32 @@
 import json
 import subprocess
 import plum
-from typing import Union
+from typing import Union, Optional
+import abc
+import time
 
 import wbml.out as out
 
-__all__ = ["Config", "execute_command", "join_command", "ssh"]
+__all__ = [
+    "assert_set",
+    "Config",
+    "execute_command",
+    "join_command",
+    "Remote",
+    "Path",
+    "LocalPath",
+    "RemotePath",
+    "ssh",
+]
 
 _dispatch = plum.Dispatcher()
+
+
+def assert_set(**kw_args):
+    """Assert that the values of keyword arguments are not `None`."""
+    for k, v in kw_args.items():
+        if v is None:
+            raise ValueError(f'Keyword argument "{k}" must be set.')
 
 
 class Config:
@@ -29,7 +48,8 @@ class Config:
         self.data[key] = value
 
 
-def execute_command(*cmd, parse_json=False):
+@_dispatch
+def execute_command(*cmd: str, parse_json=False):
     """Execute a command.
 
     Args:
@@ -65,13 +85,58 @@ def join_command(command: str):
     return "(" + command + ")"
 
 
-def ssh(host, pem, *commands):
+class Remote:
+    """Remote server.
+
+    Args:
+        user (str): User.
+        host (str): Host.
+        key (str or None): Path to private key.
+    """
+
+    def __init__(self, user: str, host: str, key: Optional[str] = None):
+        self.user = user
+        self.host = host
+        self.key = key
+
+
+class Path(metaclass=abc.ABCMeta):
+    """A path."""
+
+
+class LocalPath(Path):
+    """A local path.
+
+    Args:
+        path (str): Local path.
+    """
+
+    @_dispatch
+    def __init__(self, path: str):
+        self.path = path
+
+
+class RemotePath(Path):
+    """A path on a remote server.
+
+    Args:
+        remote (:class:`.Remote`): Remote.
+        path (str): Path on remote.
+    """
+
+    @_dispatch
+    def __init__(self, remote: Remote, path: str):
+        self.remote = remote
+        self.path = path
+
+
+@_dispatch
+def ssh(remote: Remote, *commands: str):
     """Execute commands on a host.
 
     Args:
-        host (str): Host to execute command on.
-        pem (str): Path to key to use to login.
-        *commands (str): List of commands to execute on host.
+        remote (:class:`.Remote`): Remote.
+        *commands (str): Commands to execute on host.
 
     Returns:
         object: Results of command.
@@ -80,7 +145,7 @@ def ssh(host, pem, *commands):
     command = join_command(commands)
 
     # Perform command.
-    with out.Section(f"Executing command on {host}"):
+    with out.Section(f"Executing command on {remote.host}"):
         out.out(command)
 
     # Attempt the SSH command until it works.
@@ -88,12 +153,17 @@ def ssh(host, pem, *commands):
     while res is None:
         try:
             res = execute_command(
-                "ssh", "-i", pem, "-oStrictHostKeyChecking=no", host, command
+                "ssh",
+                *(("-i", remote.key) if remote.key else ()),
+                "-oStrictHostKeyChecking=no",
+                f"{remote.user}@{remote.host}",
+                command,
             )
         except subprocess.CalledProcessError as e:
             # It failed. Print the error and try again.
             out.kv("Error", str(e))
-            out.out("Trying again.")
+            out.out("Sleeping and then trying again.")
+            time.sleep(1)
             continue
 
     return res

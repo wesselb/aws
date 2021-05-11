@@ -38,16 +38,12 @@ Python constants (like `KEY`).
 
 * Create and name a new security group.
 
-* Edit the new security group to allow incoming NFS within the security group.
-
-* Create an EFS. Correctly configure the security groups for the access points.
-
 ### Create an Image
 
 * Create a key for GitHub.
 
 ```bash
-ssh-keygen -f ~/.ssh/github -t ed25519 -C "email@host.com" \
+ssh-keygen -f ~/.ssh/github -t ed25519 -C "email@gmail.com.com" \
     && (echo "Host github.com"                 > ~/.ssh/config) \
     && (echo "    IdentityFile ~/.ssh/github" >> ~/.ssh/config) \
     && chmod 644 ~/.ssh/config \
@@ -107,36 +103,31 @@ rsync -e "ssh -i ~/.ssh/$KEY.pem" -Pav $DATA_DIR ec2-user@$IP:/home/ec2-user/$RE
 * Create a file `cluster.py`:
 
 ```python
-import aws.experiment as experiment
-import aws.monitor as monitor
+import aws
 
-experiment.config["ssh_user"] = "ec2-user"
-experiment.config["ssh_pem"] = f"~/.ssh/{KEY}.pem"
-experiment.config["setup_commands"] = [
-    "cd /home/ec2-user",
-    "mkdir -p efs",
-    "mountpoint -q efs || sudo mount ...",  # Insert the right mounting command for the EFS.
-    "sudo chmod 777 efs",
-    "cd /home/ec2-user/pac-bayes-nps",
+aws.config["ssh_user"] = "ec2-user"
+aws.config["ssh_key"] = f"~/.ssh/{KEY}.pem"
+aws.config["setup_commands"] = [
+    f"cd /home/ec2-user/{REPO}",
     "ssh-keygen -F github.com || ssh-keyscan github.com >>~/.ssh/known_hosts",
     "git pull"
 ]
 
 commands = [
-    "mkdir -p ../efs/output && touch ../efs/output/one.txt",
-    "mkdir -p ../efs/output && touch ../efs/output/two.txt",
-    "mkdir -p ../efs/output && touch ../efs/output/three.txt",
+    ["mkdir -p results", "touch results/one.txt"],
+    ["mkdir -p results", "touch results/two.txt"],
+    ["mkdir -p results", "touch results/three.txt"],
 ]
 
-experiment.manage_cluster(
+aws.manage_cluster(
     commands,
     instance_type="t2.small",
     key_name=KEY,
     security_group_id=SECURITY_GROUP,
     image_id=IMAGE_ID,
-    sync_sources=["/home/ec2-user/efs/output"],
-    sync_target="sync",
-    monitor_call=monitor.shutdown_after_a_while_call(duration=5 * 60),
+    sync_sources=[f"/home/ec2-user/{REPO}/results"],
+    sync_target=aws.LocalPath("sync"),
+    monitor_call=aws.shutdown_timed_call(duration=60),
     monitor_delay=60,
     monitor_aws_repo="/home/ec2-user/aws",
 )
@@ -145,18 +136,18 @@ experiment.manage_cluster(
 * Here's what it can do:
 
 ```bash
-usage: cluster.py [-h] [--sync-stopped] [--spawn SPAWN] [--kill] [--stop]
-                  [--terminate] [--start]
+usage: cluster_test.py [-h] [--sync-stopped] [--spawn SPAWN] [--kill] [--stop]
+                       [--terminate] [--start]
 
 optional arguments:
   -h, --help      show this help message and exit
   --sync-stopped  Synchronise all stopped instances.
   --spawn SPAWN   Spawn instances.
-  --kill          Kill all running experiments.
+  --kill          Kill all running experiments, but keep the instances alive
   --stop          Stop all running instances
   --terminate     Terminate all instances.
-  --start         Start all experiments.
-  ```
+  --start         Start experiments.
+```
 
 * Make an empty directory to synchronise to:
 
@@ -179,13 +170,13 @@ $ python cluster.py --spawn 2 --start
 ...
 ```
 
-* Check that `sync` contains the three files.
-
 *
-    Login into one of the instances to check that `/home/ec2-user/efs` also contains the
-    three files.
+    Wait for the instances to have booted and the experiments to have started.
+    The local folder `sync/results` should eventually contain the files `one.txt`,
+    `two.txt`, and `three.txt`.
     
-* Now wait ten minutes. Eventually no instance should still be running.
+*
+    Wait a bit longer to ensure that the instances eventually shutdown themselves.
 
 *
     Kill the script.
@@ -196,7 +187,9 @@ $ python cluster.py --spawn 2 --start
 $ python cluster.py --sync-stopped
 ```
 
-* If that succeeded, then we're golden! Terminate all instances of the cluster.
+*
+    If the contents of `sync` is restored, then we're golden!
+    Terminate all instances of the cluster.
 
 ```bash
 $ python cluster.py --terminate

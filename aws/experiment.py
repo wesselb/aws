@@ -1,7 +1,7 @@
 import argparse
 import subprocess
 import time
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import plum
@@ -20,17 +20,25 @@ from .ec2 import (
     start_stopped,
     stop_running,
 )
-from .monitor import shutdown_when_all_gpus_idle_for_a_while_call
-from .util import Config, execute_command, ssh
+from .util import (
+    assert_set,
+    Config,
+    execute_command,
+    ssh,
+    Remote,
+    Path,
+    LocalPath,
+    RemotePath,
+)
 
 __all__ = [
     "config",
     "spawn",
     "print_logs",
     "ssh_map",
-    "shutdown_finished",
     "kill_all",
     "sync",
+    "manage_cluster",
 ]
 
 _dispatch = plum.Dispatcher()
@@ -40,7 +48,13 @@ config["setup_commands"] = []
 config["teardown_commands"] = []
 
 
-def spawn(image_id, total_count, instance_type, key_name, security_group_id):
+def spawn(
+    image_id: str,
+    total_count: int,
+    instance_type: str,
+    key_name: str,
+    security_group_id: str,
+):
     """Spawn new EC2 instances to make a total.
 
     Args:
@@ -63,7 +77,8 @@ def spawn(image_id, total_count, instance_type, key_name, security_group_id):
         out.out("Already enough instances available.")
 
 
-def print_logs(path):
+@_dispatch
+def print_logs(path: str):
     """Display the tail of logs on all running instances.
 
     Args:
@@ -74,15 +89,16 @@ def print_logs(path):
             out.out(log)
 
 
+@_dispatch
 def ssh_map(
-    *commands,
-    broadcast=False,
-    in_experiment=False,
-    start_experiment=False,
-    start_monitor=False,
-    monitor_aws_repo="/home/ec2-user/aws",
-    monitor_delay=600,
-    monitor_call=shutdown_when_all_gpus_idle_for_a_while_call(duration=120),
+    *commands: List[str],
+    broadcast: bool = False,
+    in_experiment: bool = False,
+    start_experiment: bool = False,
+    start_monitor: bool = False,
+    monitor_aws_repo: Optional[str] = None,
+    monitor_delay: Optional[int] = None,
+    monitor_call: Optional[str] = None,
 ):
     """Execute a list of commands on different EC2 instances.
 
@@ -144,13 +160,19 @@ def ssh_map(
         setup_commands = []
 
     if start_monitor:
+        assert_set(
+            monitor_aws_repo=monitor_aws_repo,
+            monitor_delay=monitor_delay,
+            monitor_call=monitor_call,
+        )
+
         # Setup monitor.
         setup_commands += [
             "tmux new-session -d -s monitor",
             wrap(f"cd {monitor_aws_repo}", session="monitor"),
             wrap(
                 f"ssh-keygen -F github.com"
-                f" || ssh-keyscan github.com >>~/.ssh/known_hosts",
+                f" || ssh-keyscan github.com >> ~/.ssh/known_hosts",
                 session="monitor",
             ),
             wrap(f"git pull", session="monitor"),
@@ -172,20 +194,11 @@ def ssh_map(
     results = {}
     for ip, command in zip(ips, commands):
         results[ip] = ssh(
-            f'{config["ssh_user"]}@{ip}',
-            config["ssh_pem"],
+            Remote(user=config["ssh_user"], host=ip, key=config["ssh_key"]),
             *setup_commands,
             *[wrap(x, session="experiment") for x in command],
         )
     return results
-
-
-_shutdown_finished_command = "(tmux ls | grep -q experiment) || shutdown -h now"
-
-
-def shutdown_finished():
-    """Shutdown all instances that have no experiment tmux session running anymore."""
-    ssh_map([_shutdown_finished_command], broadcast=True)
 
 
 def kill_all():
@@ -194,80 +207,109 @@ def kill_all():
 
 
 @_dispatch
-def sync(sources: List[str], target: str, ips=None, shutdown=False):
+def sync(sources: List[str], target: Path, ips: List[str] = None):
     """Synchronise data.
 
     Args:
         sources (list[str]): List of sources to sync.
-        target (str): Directory to sync to.
+        target (:class:`.util.Path`): Directory to sync to.
         ips (list[str], optional): IPs to sync. Defaults to all running IPs.
-        shutdown (bool, optional): Shutdown machine after syncing if no tmux
-            session is running anymore.
     """
     if ips is None:
         ips = get_running_ips()
 
     for ip in ips:
         with out.Section(ip):
-            for folder in sources:
-                out.kv("Syncing folder", folder)
-                try:
-                    execute_command(
-                        "rsync",
-                        "-Pav",
-                        "-e",
-                        (
-                            f"ssh "
-                            f"-oStrictHostKeyChecking=no "
-                            f'-i {config["ssh_pem"]}'
-                        ),
-                        f'{config["ssh_user"]}@{ip}:{folder}',
-                        target,
-                    )
-                except subprocess.CalledProcessError as e:
-                    # rsync failed. This can happen because the output is being
-                    # written at that time. Try again.
-                    out.kv("Error", str(e))
-                    out.out("Trying again.")
-                    continue
+            for source in sources:
+                _sync_folder(source, ip, target)
 
-            if shutdown:
-                # All folders have synced. Check if the instance needs to be
-                # shutdown.
-                ssh(
-                    f'{config["ssh_user"]}@{ip}',
-                    config["ssh_pem"],
-                    _shutdown_finished_command,
-                )
+
+@_dispatch
+def _sync_folder(source: str, ip: str, target: LocalPath):
+    out.kv("Syncing local folder", target.path)
+    try:
+        execute_command(
+            "rsync",
+            "-Pav",
+            "-e",
+            f'ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}',
+            f'{config["ssh_user"]}@{ip}:{source}',
+            target.path,
+        )
+    except subprocess.CalledProcessError as e:
+        out.kv("Synchronisation error", str(e))
+
+
+@_dispatch
+def _sync_folder(source: str, ip: str, target: RemotePath):
+    out.kv(f"Syncing remote folder on {target.remote.host}", target.path)
+    try:
+        ssh(
+            target.remote,
+            f'rsync -Pav -e "ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}"'
+            f' {config["ssh_user"]}@{ip}:{source} {target.path}',
+        )
+    except subprocess.CalledProcessError as e:
+        out.kv("Synchronisation error", str(e))
 
 
 def manage_cluster(
-    commands,
-    instance_type,
-    key_name,
-    security_group_id,
-    image_id,
-    sync_sources=None,
-    sync_target=None,
-    monitor_call=shutdown_when_all_gpus_idle_for_a_while_call(duration=120),
-    monitor_delay=600,
-    monitor_aws_repo="/home/ec2-user/aws",
+    commands: List[List[str]],
+    instance_type: str,
+    key_name: str,
+    security_group_id: str,
+    image_id: str,
+    sync_sources: List[str],
+    sync_target: Path,
+    monitor_call: str,
+    monitor_delay: int,
+    monitor_aws_repo: str,
 ):
+    """Manage the cluster.
+
+    Args:
+        commands (list[list[str]]): One list of commands for every experiment.
+        image_id (str): Image ID.
+        instance_type (str): Type of the instance.
+        key_name (str): Name of the key pair.
+        security_group_id (str): Security group.
+        sync_sources (list[str]): List of sources to sync.
+        sync_target (:class:`.util.Path`): Directory to sync to.
+        monitor_call (str): Call to start the monitor. See :mod:`.monitor`.
+        monitor_delay (int): Number of seconds to wait before starting the monitor.
+        monitor_aws_repo (str): Path to this repository on the instance.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--sync-stopped", action="store_true", help="Synchronise all stopped instances."
-    )
-    parser.add_argument("--spawn", type=int, help="Spawn instances.")
-    parser.add_argument(
-        "--kill", action="store_true", help="Kill all running experiments."
+        "--sync-stopped",
+        action="store_true",
+        help="Synchronise all stopped instances.",
     )
     parser.add_argument(
-        "--stop", action="store_true", help="Stop all running instances"
+        "--spawn",
+        type=int,
+        help="Spawn instances.",
     )
     parser.add_argument(
-        "--terminate", action="store_true", help="Terminate all instances."
+        "--kill",
+        action="store_true",
+        help="Kill all running experiments, but keep the instances alive",
     )
-    parser.add_argument("--start", action="store_true", help="Start experiments.")
+    parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="Stop all running instances",
+    )
+    parser.add_argument(
+        "--terminate",
+        action="store_true",
+        help="Terminate all instances.",
+    )
+    parser.add_argument(
+        "--start",
+        action="store_true",
+        help="Start experiments.",
+    )
     args = parser.parse_args()
 
     if args.sync_stopped:
@@ -340,6 +382,8 @@ def manage_cluster(
     if args.start:
         num_instances = len(get_running_ips())
         pieces = np.array_split(commands, num_instances)
+        # Ensure that we have regular Python lists.
+        pieces = [piece.tolist() for piece in pieces]
 
         with out.Section("Starting experiments"):
             out.kv("Number of commands", len(commands))
@@ -347,7 +391,11 @@ def manage_cluster(
             out.kv("Maximum runs per instance", max([len(piece) for piece in pieces]))
             ssh_map(
                 *[
-                    [*config["setup_commands"], *piece, *config["teardown_commands"]]
+                    [
+                        *config["setup_commands"],
+                        *sum(piece, []),
+                        *config["teardown_commands"],
+                    ]
                     for piece in pieces
                 ],
                 start_experiment=True,
@@ -360,6 +408,6 @@ def manage_cluster(
 
     while True:
         out.kv("Instances still running", len(get_running_ips()))
-        sync(sync_sources, sync_target, shutdown=True)
+        sync(sync_sources, sync_target)
         out.out("Sleeping for two minutes...")
         time.sleep(2 * 60)

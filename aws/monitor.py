@@ -3,12 +3,12 @@ import numpy as np
 import time
 
 __all__ = [
+    "all_gpus_currently_idle",
     "all_gpus_idle",
-    "all_gpus_idle_for_a_while",
-    "shutdown_when_all_gpus_idle_for_a_while",
-    "shutdown_when_all_gpus_idle_for_a_while_call",
-    "shutdown_after_a_while",
-    "shutdown_after_a_while_call",
+    "shutdown_when_all_gpus_idle",
+    "shutdown_when_all_gpus_idle_call",
+    "shutdown_timed",
+    "shutdown_timed_call",
 ]
 
 
@@ -28,8 +28,8 @@ def as_int(x, default=0):
         return default
 
 
-def all_gpus_idle():
-    """Check if all GPUs are idle.
+def all_gpus_currently_idle():
+    """Check if all GPUs are now idle.
 
     Returns:
         bool: `True` if all GPUs are idle, `False` if not.
@@ -48,7 +48,7 @@ def all_gpus_idle():
     return idle
 
 
-def all_gpus_idle_for_a_while(duration=120):
+def all_gpus_idle(duration=120):
     """Check if all GPUs are idle for a while.
 
     Args:
@@ -59,7 +59,7 @@ def all_gpus_idle_for_a_while(duration=120):
     """
     start = time.time()
     while time.time() < start + duration:
-        if not all_gpus_idle():
+        if not all_gpus_currently_idle():
             return False
         time.sleep(0.1)
     return True
@@ -70,7 +70,7 @@ def shutdown():
     subprocess.call(["shutdown", "-h", "now"])
 
 
-def shutdown_when_all_gpus_idle_for_a_while(duration=120):
+def shutdown_when_all_gpus_idle(duration=120):
     """Shutdown when all GPUs are idle for a while.
 
     Args:
@@ -78,17 +78,22 @@ def shutdown_when_all_gpus_idle_for_a_while(duration=120):
             minutes.
     """
     while True:
-        if all_gpus_idle_for_a_while(duration=duration):
+        if all_gpus_idle(duration=duration):
             shutdown()
         time.sleep(60)
 
 
-def shutdown_when_all_gpus_idle_for_a_while_call(duration=120):
-    return f"shutdown_when_all_gpus_idle_for_a_while(duration={duration})"
+def shutdown_when_all_gpus_idle_call(duration=120):
+    """Like :func:`.shutdown_when_all_gpus_idle`, but returns the call as a string.
+
+    Returns:
+        str: Call.
+    """
+    return f"shutdown_when_all_gpus_idle(duration={duration})"
 
 
-def shutdown_after_a_while(duration=120):
-    """Shutdown.
+def shutdown_timed(duration=120):
+    """Shutdown after a while.
 
     Args:
         duration (int, optional): Number of seconds to wait before shutting down.
@@ -97,5 +102,10 @@ def shutdown_after_a_while(duration=120):
     shutdown()
 
 
-def shutdown_after_a_while_call(duration=120):
-    return f"shutdown_after_a_while(duration={duration})"
+def shutdown_timed_call(duration=120):
+    """Like :func:`.shutdown_timed`, but returns the call as a string.
+
+    Returns:
+        str: Call.
+    """
+    return f"shutdown_timed(duration={duration})"

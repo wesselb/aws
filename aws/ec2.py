@@ -93,7 +93,8 @@ def get_running_ips():
     return [instance["PublicIpAddress"] for instance in get_state("running")]
 
 
-def get_state(state):
+@_dispatch
+def get_state(state: str):
     """Get all EC2 instances of a certain state.
 
     Args:
@@ -120,7 +121,13 @@ def check_all_running():
     return True
 
 
-def run(image_id, instance_type, count, key_name, security_group_id):
+def run(
+    image_id: str,
+    instance_type: str,
+    count: int,
+    key_name: str,
+    security_group_id: str,
+):
     """Run new EC2 instances.
 
     Args:
@@ -153,7 +160,8 @@ def terminate_all():
         out.out("No instances to terminate.")
 
 
-def start(*instances):
+@_dispatch
+def start(*instances: dict):
     """Start EC2 instances.
 
     Args:
@@ -163,7 +171,8 @@ def start(*instances):
     execute_command("aws", "ec2", "start-instances", "--instance-ids", *instance_ids)
 
 
-def stop(*instances):
+@_dispatch
+def stop(*instances: dict):
     """Stop EC2 instances.
 
     Args:
