@@ -50,7 +50,11 @@ Python constants (like `KEY`).
 
 * Create and name an appropriate security group.
 
+* Launch the instance.
+
 ### Create an Image
+
+* Log into the instance.
 
 * Create a key for GitHub.
 
@@ -148,17 +152,20 @@ aws.manage_cluster(
 * Here's what it can do:
 
 ```bash
-usage: cluster_test.py [-h] [--sync-stopped] [--spawn SPAWN] [--kill] [--stop]
-                       [--terminate] [--start]
+usage: cluster.py [-h] [--sync-stopped] [--spawn SPAWN] [--kill] [--stop]
+                  [--terminate] [--start] [--sync-sleep SYNC_SLEEP]
 
 optional arguments:
-  -h, --help      show this help message and exit
-  --sync-stopped  Synchronise all stopped instances.
-  --spawn SPAWN   Spawn instances.
-  --kill          Kill all running experiments, but keep the instances alive
-  --stop          Stop all running instances
-  --terminate     Terminate all instances.
-  --start         Start experiments.
+  -h, --help            show this help message and exit
+  --sync-stopped        Synchronise all stopped instances.
+  --spawn SPAWN         Spawn instances.
+  --kill                Kill all running experiments, but keep the instances
+                        alive
+  --stop                Stop all running instances
+  --terminate           Terminate all instances.
+  --start               Start experiments.
+  --sync-sleep SYNC_SLEEP
+                        Number of seconds to sleep before syncing again.
 ```
 
 * Make an empty directory to synchronise to:

@@ -310,6 +310,12 @@ def manage_cluster(
         action="store_true",
         help="Start experiments.",
     )
+    parser.add_argument(
+        "--sync-sleep",
+        default=120,
+        type=int,
+        help="Number of seconds to sleep before syncing again.",
+    )
     args = parser.parse_args()
 
     if args.sync_stopped:
@@ -409,5 +415,5 @@ def manage_cluster(
     while True:
         out.kv("Instances still running", len(get_running_ips()))
         sync(sync_sources, sync_target)
-        out.out("Sleeping for two minutes...")
-        time.sleep(2 * 60)
+        out.out(f"Sleeping for {args.sync_sleep} seconds...")
+        time.sleep(args.sync_sleep)
