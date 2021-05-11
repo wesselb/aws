@@ -152,18 +152,18 @@ aws.manage_cluster(
 * Here's what it can do:
 
 ```bash
-usage: cluster.py [-h] [--sync-stopped] [--spawn SPAWN] [--kill] [--stop]
-                  [--terminate] [--start] [--sync-sleep SYNC_SLEEP]
+usage: cluster.py [-h] [--spawn SPAWN] [--start] [--terminate] [--kill]
+                  [--stop] [--sync-stopped] [--sync-sleep SYNC_SLEEP]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --sync-stopped        Synchronise all stopped instances.
   --spawn SPAWN         Spawn instances.
-  --kill                Kill all running experiments, but keep the instances
-                        alive
-  --stop                Stop all running instances
-  --terminate           Terminate all instances.
   --start               Start experiments.
+  --terminate           Terminate all instances. This is a kill switch.
+  --kill                Kill all running experiments, but keep the instances
+                        running.
+  --stop                Stop all running instances
+  --sync-stopped        Synchronise all stopped instances.
   --sync-sleep SYNC_SLEEP
                         Number of seconds to sleep before syncing again.
 ```
