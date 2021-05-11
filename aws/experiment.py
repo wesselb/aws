@@ -281,19 +281,24 @@ def manage_cluster(
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--sync-stopped",
-        action="store_true",
-        help="Synchronise all stopped instances.",
-    )
-    parser.add_argument(
         "--spawn",
         type=int,
         help="Spawn instances.",
     )
     parser.add_argument(
+        "--start",
+        action="store_true",
+        help="Start experiments.",
+    )
+    parser.add_argument(
+        "--terminate",
+        action="store_true",
+        help="Terminate all instances. This is a kill switch.",
+    )
+    parser.add_argument(
         "--kill",
         action="store_true",
-        help="Kill all running experiments, but keep the instances alive",
+        help="Kill all running experiments, but keep the instances running.",
     )
     parser.add_argument(
         "--stop",
@@ -301,14 +306,9 @@ def manage_cluster(
         help="Stop all running instances",
     )
     parser.add_argument(
-        "--terminate",
+        "--sync-stopped",
         action="store_true",
-        help="Terminate all instances.",
-    )
-    parser.add_argument(
-        "--start",
-        action="store_true",
-        help="Start experiments.",
+        help="Synchronise all stopped instances.",
     )
     parser.add_argument(
         "--sync-sleep",
