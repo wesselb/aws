@@ -337,9 +337,6 @@ def manage_cluster(
                     instance_ids = [instance["InstanceId"] for instance in batch]
                     batch = get_instances(*instance_ids)
 
-                    # Setup the instances.
-                    ssh_map(config["setup_commands"], broadcast=True)
-
                     # Sync.
                     sync(
                         sync_sources,
@@ -415,5 +412,5 @@ def manage_cluster(
     while True:
         out.kv("Instances still running", len(get_running_ips()))
         sync(sync_sources, sync_target)
-        out.out(f"Sleeping for {args.sync_sleep} seconds...")
+        out.out(f"Sleeping for {args.sync_sleep} second(s)...")
         time.sleep(args.sync_sleep)
