@@ -7,6 +7,16 @@
 
 Manage AWS EC2 instances for experiments
 
+Contents:
+* [Local Installation of Repository](#local-installation-of-repository)
+* [Sample Experiment](#sample-experiment)
+    * [Setup AWS](#setup-aws)
+    * [Create an Image](#create-an-image)
+    * [Test the Cluster](#test-the-cluster)
+* [Features](#features)
+    * [Synchronise to a Remote Host](#synchronise-to-a-remote-host)
+    * [Shutdown the Instance When All GPUs Are Idle](#shutdown-the-instance-when-all-gpus-are-idle)
+
 ## Local Installation of Repository
 
 See [the instructions here](https://gist.github.com/wesselb/4b44bf87f3789425f96e26c4308d0adc).
@@ -34,9 +44,11 @@ Python constants (like `KEY`).
 
 * Install and configure the Amazon CLI.
 
-* Create a new EC2 instance with the Deep Learning Base AMI (Amazon Linux 2).
+*
+    Create a new EC2 instance with the Deep Learning Base AMI (Amazon Linux 2).
+    Make sure that you allocate enough disk space.
 
-* Create and name a new security group.
+* Create and name an appropriate security group.
 
 ### Create an Image
 
@@ -202,3 +214,30 @@ Kill the script.
 You're now good to run your big experiment!
 
 
+## Features
+
+### Synchronise to a Remote Host
+
+```bash
+aws.manage_cluster(
+    commands,
+    ...
+    sync_target=aws.RemotePath(
+        aws.Remote(user="user", host="host", key=f"~/.ssh/{KEY}"),
+        "/path/to/sync"
+    ),
+    ...
+)
+```
+
+### Shutdown the Instance When All GPUs Are Idle
+
+
+```bash
+aws.manage_cluster(
+    commands,
+    ...
+    monitor_call=aws.shutdown_when_all_gpus_idle_call(duration=60),
+    ...
+)
+```
