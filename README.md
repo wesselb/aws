@@ -125,7 +125,7 @@ aws.config["ssh_user"] = "ec2-user"
 aws.config["ssh_key"] = f"~/.ssh/{KEY}.pem"
 aws.config["setup_commands"] = [
     f"cd /home/ec2-user/{REPO}",
-    "ssh-keygen -F github.com || ssh-keyscan github.com >>~/.ssh/known_hosts",
+    "ssh-keygen -F github.com || ssh-keyscan github.com >> ~/.ssh/known_hosts",
     "git pull"
 ]
 
