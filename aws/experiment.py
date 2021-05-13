@@ -226,31 +226,37 @@ def sync(sources: List[str], target: Path, ips: List[str] = None):
 
 @_dispatch
 def _sync_folder(source: str, ip: str, target: LocalPath):
-    out.kv("Syncing local folder", target.path)
-    try:
-        execute_command(
-            "rsync",
-            "-Pav",
-            "-e",
-            f'ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}',
-            f'{config["ssh_user"]}@{ip}:{source}',
-            target.path,
-        )
-    except subprocess.CalledProcessError as e:
-        out.kv("Synchronisation error", str(e))
+    with out.Section("Syncing local folder"):
+        out.kv("Source", source)
+        out.kv("Target", target.path)
+        try:
+            execute_command(
+                "rsync",
+                "-Pav",
+                "-e",
+                f'ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}',
+                f'{config["ssh_user"]}@{ip}:{source}',
+                target.path,
+            )
+        except subprocess.CalledProcessError as e:
+            out.kv("Synchronisation error", str(e))
 
 
 @_dispatch
 def _sync_folder(source: str, ip: str, target: RemotePath):
-    out.kv(f"Syncing remote folder on {target.remote.host}", target.path)
-    try:
-        ssh(
-            target.remote,
-            f'rsync -Pav -e "ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}"'
-            f' {config["ssh_user"]}@{ip}:{source} {target.path}',
-        )
-    except subprocess.CalledProcessError as e:
-        out.kv("Synchronisation error", str(e))
+    with out.Section("Syncing remote folder"):
+        out.kv("Source", source)
+        with out.Section("Target"):
+            out.kv("Host", target.remote.host)
+            out.kv("Path", target.path)
+        try:
+            ssh(
+                target.remote,
+                f'rsync -Pav -e "ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}"'
+                f' {config["ssh_user"]}@{ip}:{source} {target.path}',
+            )
+        except subprocess.CalledProcessError as e:
+            out.kv("Synchronisation error", str(e))
 
 
 def manage_cluster(
