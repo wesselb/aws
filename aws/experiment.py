@@ -226,7 +226,7 @@ def sync(sources: List[str], target: Path, ips: List[str] = None):
 
 @_dispatch
 def _sync_folder(source: str, ip: str, target: LocalPath):
-    with out.Section("Syncing local folder"):
+    with out.Section("Syncing to local folder"):
         out.kv("Source", source)
         out.kv("Target", target.path)
         try:
@@ -244,7 +244,7 @@ def _sync_folder(source: str, ip: str, target: LocalPath):
 
 @_dispatch
 def _sync_folder(source: str, ip: str, target: RemotePath):
-    with out.Section("Syncing remote folder"):
+    with out.Section("Syncing to remote folder"):
         out.kv("Source", source)
         with out.Section("Target"):
             out.kv("Host", target.remote.host)
