@@ -178,10 +178,10 @@ def ssh_map(
                 session="monitor",
             ),
             wrap(f"git pull", session="monitor"),
-            wrap(f"source venv/bin/activate", session="monitor"),
             wrap(f"sleep {monitor_delay}", session="monitor"),
             wrap(
-                f'python -c "import aws.monitor; aws.monitor.{monitor_call}"',
+                f"sudo venv/bin/python -c"
+                f' "import aws.monitor; aws.monitor.{monitor_call}"',
                 session="monitor",
             ),
         ]
