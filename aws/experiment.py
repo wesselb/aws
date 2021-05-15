@@ -112,7 +112,9 @@ def ssh_map(
             Defaults to `False`.
         start_monitor (bool, optional): Start the `monitor` tmux session. Defaults to
             `False`.
-        monitor_aws_repo (str, optional): Path to the root of this repo.
+        monitor_aws_repo (str, optional): Path to the root of this repo. The repo
+            must consider the virtual environment "venv" which has the repo installed
+            in editable mode.
         monitor_delay (int, optional): Delay before starting the monitor.
         monitor_call (str, optional): Python call to start the monitor.
     """
@@ -176,7 +178,6 @@ def ssh_map(
                 session="monitor",
             ),
             wrap(f"git pull", session="monitor"),
-            wrap(f"sudo su", session="monitor"),
             wrap(f"source venv/bin/activate", session="monitor"),
             wrap(f"sleep {monitor_delay}", session="monitor"),
             wrap(
@@ -267,9 +268,9 @@ def manage_cluster(
     image_id: str,
     sync_sources: List[str],
     sync_target: Path,
+    monitor_aws_repo: str,
     monitor_call: str,
     monitor_delay: int,
-    monitor_aws_repo: str,
 ):
     """Manage the cluster.
 
@@ -281,9 +282,11 @@ def manage_cluster(
         security_group_id (str): Security group.
         sync_sources (list[str]): List of sources to sync.
         sync_target (:class:`.util.Path`): Directory to sync to.
+        monitor_aws_repo (str, optional): Path to the root of this repo. The repo
+            must consider the virtual environment "venv" which has the repo installed
+            in editable mode.
         monitor_call (str): Call to start the monitor. See :mod:`.monitor`.
         monitor_delay (int): Number of seconds to wait before starting the monitor.
-        monitor_aws_repo (str): Path to this repository on the instance.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(

@@ -67,7 +67,7 @@ def all_gpus_idle(duration=120):
 
 def shutdown():
     """Shutdown."""
-    subprocess.call(["shutdown", "-h", "now"])
+    subprocess.call(["sudo", "shutdown", "-h", "now"])
 
 
 def shutdown_when_all_gpus_idle(duration=120):
