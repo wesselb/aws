@@ -1,2 +1,4 @@
 TODO:
-     ☐ Retry failure of local sync.
+    ☐ Add tags for simultaneous cluster runs. @high
+    ☐ Retry failure of local sync. @high
+    ☐ Add tests. @critical
