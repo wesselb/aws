@@ -77,7 +77,10 @@ sudo amazon-linux-extras install python3.8 \
     && sudo pip3.8 install --upgrade pip setuptools Cython numpy virtualenv
 ```
 
-* Setup the AWS repository:
+*
+    Setup the AWS repository.
+    **Note:** If the path to the repository is `~/aws`, then `~/aws/venv` must be a
+    virtual environment which has the repository installed in editable mode.
 
 ```bash
 cd ~
