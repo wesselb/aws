@@ -59,7 +59,7 @@ Python constants (like `KEY`).
 * Create a key for GitHub.
 
 ```bash
-ssh-keygen -f ~/.ssh/github -t ed25519 -C "email@gmail.com.com" \
+ssh-keygen -f ~/.ssh/github -t ed25519 -C "email@gmail.com" \
     && (echo "Host github.com"                 > ~/.ssh/config) \
     && (echo "    IdentityFile ~/.ssh/github" >> ~/.ssh/config) \
     && chmod 644 ~/.ssh/config \
