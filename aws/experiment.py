@@ -208,7 +208,7 @@ def kill_all():
 
 
 @_dispatch
-def sync(sources: List[str], target: Path, ips: List[str] = None):
+def sync(sources: List[str], target: Path, ips: Optional[List[str]] = None):
     """Synchronise data.
 
     Args:
@@ -255,6 +255,7 @@ def _sync_folder(source: str, ip: str, target: RemotePath):
                 target.remote,
                 f'rsync -Pav -e "ssh -oStrictHostKeyChecking=no -i {config["ssh_key"]}"'
                 f' {config["ssh_user"]}@{ip}:{source} {target.path}',
+                retry_until_success=False
             )
         except subprocess.CalledProcessError as e:
             out.kv("Synchronisation error", str(e))

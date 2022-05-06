@@ -131,12 +131,14 @@ class RemotePath(Path):
 
 
 @_dispatch
-def ssh(remote: Remote, *commands: str):
+def ssh(remote: Remote, *commands: str, retry_until_success=True):
     """Execute commands on a host.
 
     Args:
         remote (:class:`.Remote`): Remote.
         *commands (str): Commands to execute on host.
+        retry_until_success (bool, optional): Retry until the command succeeds. Defaults
+            to `True`.
 
     Returns:
         object: Results of command.
@@ -162,8 +164,11 @@ def ssh(remote: Remote, *commands: str):
         except subprocess.CalledProcessError as e:
             # It failed. Print the error and try again.
             out.kv("Error", str(e))
-            out.out("Sleeping and then trying again.")
-            time.sleep(1)
-            continue
+            if retry_until_success:
+                out.out("Sleeping and then trying again.")
+                time.sleep(1)
+                continue
+            else:
+                break
 
     return res
